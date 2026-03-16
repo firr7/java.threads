@@ -1,3 +1,3 @@
 Java Threads Educational Website
 
-firr7.github.io/java.threads
+https://firr7.github.io/java.threads/
