@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Threads — Guida Completa</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #0f1524;
+    --card: #131929;
+    --border: #1e2d4a;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #22c55e;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #080c14;
+  }
+ 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+  html { scroll-behavior: smooth; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+ 
+  /* ===== GRID NOISE BACKGROUND ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+ 
+  /* ===== GLOW ORBS ===== */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-1 { width: 500px; height: 500px; background: rgba(0,212,255,0.06); top: -100px; left: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: rgba(124,58,237,0.08); bottom: 20%; right: -100px; }
+  .orb-3 { width: 300px; height: 300px; background: rgba(255,107,53,0.05); top: 50%; left: 40%; }
+ 
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,14,23,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+ 
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--accent2); }
+ 
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    cursor: pointer;
+  }
+  .nav-links a:hover { color: var(--accent); }
+ 
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 100px 4rem 4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    gap: 4rem;
+  }
+ 
+  .hero-left { flex: 1; }
+ 
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    animation: fadeInUp 0.6s ease both;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+ 
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+ 
+  .hero h1 {
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -3px;
+    animation: fadeInUp 0.6s 0.1s ease both;
+  }
+ 
+  .hero h1 .line1 { color: var(--text); }
+  .hero h1 .line2 {
+    color: transparent;
+    -webkit-text-stroke: 2px var(--accent);
+    display: block;
+  }
+ 
+  .hero-desc {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 500px;
+    line-height: 1.8;
+    animation: fadeInUp 0.6s 0.2s ease both;
+  }
+ 
+  .hero-cta {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    animation: fadeInUp 0.6s 0.3s ease both;
+  }
+ 
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,212,255,0.4);
+  }
+ 
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+    display: inline-block;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+ 
+  /* ===== THREAD VISUALIZER ===== */
+  .hero-visual {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    animation: fadeInUp 0.6s 0.4s ease both;
+  }
+ 
+  .thread-viz {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 450px;
+  }
+ 
+  .viz-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+ 
+  .thread-lane {
+    margin-bottom: 1rem;
+  }
+  .thread-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .thread-bar {
+    height: 28px;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+  }
+  .thread-fill {
+    height: 100%;
+    border-radius: 6px;
+    animation: threadAnim 3s ease-in-out infinite;
+    position: relative;
+  }
+  .thread-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 2s infinite;
+  }
+ 
+  @keyframes shimmer { to { left: 200%; } }
+ 
+  .t1 { background: linear-gradient(90deg, var(--accent), #0099bb); animation-delay: 0s; width: 70%; }
+  .t2 { background: linear-gradient(90deg, var(--accent2), #cc4400); animation-delay: 0.4s; width: 45%; }
+  .t3 { background: linear-gradient(90deg, var(--accent3), #5b21b6); animation-delay: 0.8s; width: 85%; }
+  .t4 { background: linear-gradient(90deg, var(--green), #16a34a); animation-delay: 1.2s; width: 30%; }
+ 
+  @keyframes threadAnim {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+ 
+  .viz-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .viz-stat {
+    text-align: center;
+  }
+  .viz-stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .viz-stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+ 
+  /* ===== SECTIONS ===== */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+ 
+  .section {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .section.visible { opacity: 1; transform: translateY(0); }
+ 
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::before {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 1px;
+    background: var(--accent);
+  }
+ 
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+ 
+  .section-desc {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 650px;
+    margin-bottom: 2.5rem;
+    line-height: 1.8;
+  }
+ 
+  /* ===== CARDS GRID ===== */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+ 
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .card:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-4px);
+  }
+  .card:hover::before { opacity: 1; }
+ 
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+ 
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+ 
+  .card-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+ 
+  /* ===== CODE BLOCK ===== */
+  .code-container {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+ 
+  .code-header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+ 
+  .code-dots { display: flex; gap: 6px; }
+ 
+  .code-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+ 
+  .copy-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+ 
+  pre {
+    padding: 1.5rem 2rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+ 
+  .kw { color: #c792ea; }
+  .cls { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cmt { color: #546e7a; font-style: italic; }
+  .fn { color: #82aaff; }
+  .num { color: #f78c6c; }
+  .ann { color: #ffcb6b; }
+ 
+  /* ===== LIFECYCLE ===== */
+  .lifecycle {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 1rem 0;
+  }
+ 
+  .lc-state {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+    min-width: 110px;
+    flex-shrink: 0;
+    transition: border-color 0.3s;
+  }
+  .lc-state:hover { border-color: var(--accent); }
+ 
+  .lc-state-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+  }
+  .lc-state-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 4px;
+    display: block;
+  }
+ 
+  .lc-arrow {
+    color: var(--muted);
+    font-size: 1.2rem;
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+  }
+ 
+  /* ===== COMPARISON TABLE ===== */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+ 
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+ 
+  thead {
+    background: var(--card);
+  }
+ 
+  th {
+    padding: 14px 20px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  td {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(30,45,74,0.5);
+    color: var(--text);
+  }
+ 
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(0,212,255,0.02); }
+ 
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .badge-blue { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .badge-orange { background: rgba(255,107,53,0.1); color: var(--accent2); border: 1px solid rgba(255,107,53,0.2); }
+  .badge-green { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge-purple { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+ 
+  /* ===== TWO-COL ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+ 
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+    .hero { flex-direction: column; padding: 100px 1.5rem 3rem; }
+    .lifecycle { flex-wrap: wrap; gap: 0.5rem; }
+    .lc-arrow { display: none; }
+    nav .nav-links { display: none; }
+  }
+ 
+  /* ===== CALLOUT ===== */
+  .callout {
+    background: rgba(0,212,255,0.05);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .callout strong { color: var(--accent); }
+ 
+  .callout-warn {
+    background: rgba(255,107,53,0.05);
+    border-left-color: var(--accent2);
+  }
+  .callout-warn strong { color: var(--accent2); }
+ 
+  /* ===== FOOTER ===== */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+ 
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+ 
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">java<span>.</span>threads</div>
+  <ul class="nav-links">
+    <li><a data-target="cosa-sono">Concetti</a></li>
+    <li><a data-target="ciclo-vita">Lifecycle</a></li>
+    <li><a data-target="codice">Codice</a></li>
+    <li><a data-target="sincronizzazione">Sync</a></li>
+    <li><a data-target="executor">Executor</a></li>
+  </ul>
+</nav>
+ 
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-badge">Java Concorrency Handbook</div>
+    <h1>
+      <span class="line1">Java</span>
+      <span class="line2">Threads</span>
+    </h1>
+    <p class="hero-desc">
+      Tutto quello che devi sapere sulla programmazione concorrente in Java: dalla creazione dei thread alla sincronizzazione, dal Thread Pool agli Executor.
+    </p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="scrollTo('cosa-sono')">Inizia a leggere</button>
+      <button class="btn-outline" onclick="scrollTo('codice')">Vedi il codice</button>
+    </div>
+  </div>
+ 
+  <div class="hero-visual">
+    <div class="thread-viz">
+      <div class="viz-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        Thread Scheduler — Live
+      </div>
+ 
+      <div class="thread-lane">
+        <div class="thread-label">Thread-1 (RUNNING)</div>
+        <div class="thread-bar"><div class="thread-fill t1"></div></div>
+      </div>
+      <div class="thread-lane">
+        <div class="thread-label">Thread-2 (RUNNABLE)</div>
+        <div class="thread-bar"><div class="thread-fill t2"></div></div>
+      </div>
+      <div class="thread-lane">
+        <div class="thread-label">Thread-3 (RUNNING)</div>
+        <div class="thread-bar"><div class="thread-fill t3"></div></div>
+      </div>
+      <div class="thread-lane">
+        <div class="thread-label">Thread-4 (WAITING)</div>
+        <div class="thread-bar"><div class="thread-fill t4"></div></div>
+      </div>
+ 
+      <div class="viz-stats">
+        <div class="viz-stat">
+          <div class="viz-stat-num" id="active-count">4</div>
+          <div class="viz-stat-label">Thread attivi</div>
+        </div>
+        <div class="viz-stat">
+          <div class="viz-stat-num">JVM</div>
+          <div class="viz-stat-label">Runtime</div>
+        </div>
+        <div class="viz-stat">
+          <div class="viz-stat-num" id="cpu-num">2</div>
+          <div class="viz-stat-label">Core CPU</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<main>
+ 
+  <!-- COSA SONO -->
+  <section class="section" id="cosa-sono">
+    <div class="section-label">Fondamentali</div>
+    <h2 class="section-title">Cosa sono i Thread?</h2>
+    <p class="section-desc">
+      Un thread è la più piccola unità di esecuzione gestita dal sistema operativo. In Java, ogni programma parte con un thread principale (<strong>main thread</strong>), ma puoi creare thread aggiuntivi per eseguire operazioni in parallelo.
+    </p>
+ 
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon" style="background: rgba(0,212,255,0.1);">⚡</div>
+        <div class="card-title">Concorrenza</div>
+        <div class="card-desc">Più thread eseguono compiti in modo sovrapposto, condividendo le risorse della CPU tramite il time-slicing del sistema operativo.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(124,58,237,0.1);">🔀</div>
+        <div class="card-title">Parallelismo</div>
+        <div class="card-desc">Su CPU multi-core, thread diversi possono girare letteralmente in parallelo su core fisici distinti allo stesso istante.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(255,107,53,0.1);">📦</div>
+        <div class="card-title">Condivisione della Memoria</div>
+        <div class="card-desc">I thread di uno stesso processo condividono heap e metaspace, ma ognuno ha il proprio stack e program counter privato.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(34,197,94,0.1);">🛡️</div>
+        <div class="card-title">Thread Safety</div>
+        <div class="card-desc">Codice "thread-safe" funziona correttamente anche se eseguito da più thread contemporaneamente, senza race condition o dati corrotti.</div>
+      </div>
+    </div>
+ 
+    <div class="callout" style="margin-top:2rem">
+      <strong>Processo vs Thread:</strong> Un processo ha il proprio spazio di memoria isolato. I thread sono "fibre" all'interno dello stesso processo: più leggeri da creare, ma richiedono sincronizzazione per accedere a dati condivisi.
+    </div>
+  </section>
+ 
+  <!-- CICLO DI VITA -->
+  <section class="section" id="ciclo-vita">
+    <div class="section-label">Lifecycle</div>
+    <h2 class="section-title">Ciclo di Vita di un Thread</h2>
+    <p class="section-desc">
+      In Java, un thread attraversa diversi stati definiti dall'enum <code style="color:var(--accent);font-family:'JetBrains Mono',monospace">Thread.State</code>.
+    </p>
+ 
+    <div class="lifecycle">
+      <div class="lc-state">
+        <span class="lc-state-name">NEW</span>
+        <span class="lc-state-desc">Creato, non avviato</span>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-state">
+        <span class="lc-state-name">RUNNABLE</span>
+        <span class="lc-state-desc">Pronto / in esecuzione</span>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-state">
+        <span class="lc-state-name">BLOCKED</span>
+        <span class="lc-state-desc">Attende un lock</span>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-state">
+        <span class="lc-state-name">WAITING</span>
+        <span class="lc-state-desc">Attende indefinita</span>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-state">
+        <span class="lc-state-name">TIMED_WAITING</span>
+        <span class="lc-state-desc">Attende con timeout</span>
+      </div>
+      <div class="lc-arrow">→</div>
+      <div class="lc-state">
+        <span class="lc-state-name">TERMINATED</span>
+        <span class="lc-state-desc">Esecuzione completata</span>
+      </div>
+    </div>
+ 
+    <div class="callout callout-warn" style="margin-top:2rem">
+      <strong>Attenzione:</strong> Un thread nel stato <strong>TERMINATED</strong> non può essere riavviato. Chiamare <code style="font-family:'JetBrains Mono',monospace">start()</code> su un thread già terminato lancia un'eccezione <code style="font-family:'JetBrains Mono',monospace">IllegalThreadStateException</code>.
+    </div>
+  </section>
+ 
+  <!-- CODICE -->
+  <section class="section" id="codice">
+    <div class="section-label">Implementazione</div>
+    <h2 class="section-title">Creare un Thread</h2>
+    <p class="section-desc">Ci sono tre modi principali per creare thread in Java.</p>
+ 
+    <div class="two-col">
+      <div>
+        <div class="code-container">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <span class="code-title">Metodo 1 — extends Thread</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+          </div>
+          <pre><code><span class="kw">public class</span> <span class="cls">MioThread</span> <span class="kw">extends</span> <span class="cls">Thread</span> {
+ 
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="cmt">// Codice eseguito dal thread</span>
+        <span class="cls">System</span>.out.<span class="fn">println</span>(
+            <span class="str">"Thread: "</span> + <span class="fn">currentThread</span>().<span class="fn">getName</span>()
+        );
+    }
+ 
+    <span class="kw">public static void</span> <span class="fn">main</span>(<span class="cls">String</span>[] args) {
+        <span class="cls">MioThread</span> t = <span class="kw">new</span> <span class="cls">MioThread</span>();
+        t.<span class="fn">start</span>(); <span class="cmt">// NON chiamare run()!</span>
+    }
+}</code></pre>
+        </div>
+      </div>
+ 
+      <div>
+        <div class="code-container">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <span class="code-title">Metodo 2 — implements Runnable</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+          </div>
+          <pre><code><span class="kw">public class</span> <span class="cls">MioTask</span> <span class="kw">implements</span> <span class="cls">Runnable</span> {
+ 
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"Runnable in esecuzione!"</span>);
+    }
+}
+ 
+<span class="cmt">// Utilizzo:</span>
+<span class="cls">Thread</span> t = <span class="kw">new</span> <span class="cls">Thread</span>(<span class="kw">new</span> <span class="cls">MioTask</span>());
+t.<span class="fn">start</span>();
+ 
+<span class="cmt">// Oppure con lambda (Java 8+):</span>
+<span class="cls">Thread</span> t2 = <span class="kw">new</span> <span class="cls">Thread</span>(() -&gt; {
+    <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"Lambda thread!"</span>);
+});
+t2.<span class="fn">start</span>();</code></pre>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span class="code-title">Metodo 3 — Callable + Future (con valore di ritorno)</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+      </div>
+      <pre><code><span class="kw">import</span> java.util.concurrent.*;
+ 
+<span class="cls">Callable</span>&lt;<span class="cls">Integer</span>&gt; task = () -&gt; {
+    <span class="cls">Thread</span>.<span class="fn">sleep</span>(<span class="num">1000</span>);
+    <span class="kw">return</span> <span class="num">42</span>;  <span class="cmt">// Callable può restituire un valore!</span>
+};
+ 
+<span class="cls">ExecutorService</span> executor = <span class="cls">Executors</span>.<span class="fn">newSingleThreadExecutor</span>();
+<span class="cls">Future</span>&lt;<span class="cls">Integer</span>&gt; future = executor.<span class="fn">submit</span>(task);
+ 
+<span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"Aspetto il risultato..."</span>);
+<span class="kw">int</span> result = future.<span class="fn">get</span>();  <span class="cmt">// Blocca fino al completamento</span>
+<span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"Risultato: "</span> + result);  <span class="cmt">// 42</span>
+ 
+executor.<span class="fn">shutdown</span>();</code></pre>
+    </div>
+ 
+    <div class="callout">
+      <strong>Best Practice:</strong> Preferisci <code style="font-family:'JetBrains Mono',monospace">Runnable</code> o <code style="font-family:'JetBrains Mono',monospace">Callable</code> all'estensione diretta di <code style="font-family:'JetBrains Mono',monospace">Thread</code>. Questo separa il task dalla sua strategia di esecuzione e consente di usare i thread pool.
+    </div>
+  </section>
+ 
+  <!-- SINCRONIZZAZIONE -->
+  <section class="section" id="sincronizzazione">
+    <div class="section-label">Concorrenza Sicura</div>
+    <h2 class="section-title">Sincronizzazione</h2>
+    <p class="section-desc">
+      Quando più thread accedono agli stessi dati, si possono verificare <strong>race condition</strong>. La sincronizzazione garantisce l'accesso esclusivo alle sezioni critiche.
+    </p>
+ 
+    <div class="two-col">
+      <div>
+        <div class="code-container">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <span class="code-title">synchronized — Keyword</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+          </div>
+          <pre><code><span class="kw">public class</span> <span class="cls">Contatore</span> {
+    <span class="kw">private int</span> valore = <span class="num">0</span>;
+ 
+    <span class="cmt">// Solo un thread alla volta</span>
+    <span class="kw">public synchronized void</span> <span class="fn">incrementa</span>() {
+        valore++;
+    }
+ 
+    <span class="kw">public synchronized int</span> <span class="fn">getValore</span>() {
+        <span class="kw">return</span> valore;
+    }
+ 
+    <span class="cmt">// Blocco sincronizzato (più flessibile)</span>
+    <span class="kw">public void</span> <span class="fn">incrementaBloccato</span>() {
+        <span class="kw">synchronized</span>(<span class="kw">this</span>) {
+            valore++;
+        }
+    }
+}</code></pre>
+        </div>
+      </div>
+ 
+      <div>
+        <div class="code-container">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <span class="code-title">ReentrantLock — Più controllo</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+          </div>
+          <pre><code><span class="kw">import</span> java.util.concurrent.locks.*;
+ 
+<span class="cls">Lock</span> lock = <span class="kw">new</span> <span class="cls">ReentrantLock</span>();
+<span class="kw">int</span> valore = <span class="num">0</span>;
+ 
+<span class="kw">public void</span> <span class="fn">incrementa</span>() {
+    lock.<span class="fn">lock</span>();
+    <span class="kw">try</span> {
+        valore++;
+    } <span class="kw">finally</span> {
+        lock.<span class="fn">unlock</span>(); <span class="cmt">// SEMPRE nel finally!</span>
+    }
+}
+ 
+<span class="cmt">// Tentativo non bloccante</span>
+<span class="kw">if</span> (lock.<span class="fn">tryLock</span>()) {
+    <span class="kw">try</span> {
+        <span class="cmt">// sezione critica</span>
+    } <span class="kw">finally</span> {
+        lock.<span class="fn">unlock</span>();
+    }
+}</code></pre>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span class="code-title">Atomic Classes — Lock-free, alte prestazioni</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+      </div>
+      <pre><code><span class="kw">import</span> java.util.concurrent.atomic.*;
+ 
+<span class="cls">AtomicInteger</span> contatore = <span class="kw">new</span> <span class="cls">AtomicInteger</span>(<span class="num">0</span>);
+ 
+contatore.<span class="fn">incrementAndGet</span>();    <span class="cmt">// ++valore, thread-safe</span>
+contatore.<span class="fn">decrementAndGet</span>();    <span class="cmt">// --valore, thread-safe</span>
+contatore.<span class="fn">addAndGet</span>(<span class="num">5</span>);         <span class="cmt">// valore += 5</span>
+contatore.<span class="fn">compareAndSet</span>(<span class="num">10</span>, <span class="num">20</span>); <span class="cmt">// se valore==10, imposta a 20</span>
+ 
+<span class="cmt">// Altre classi atomiche utili:</span>
+<span class="cls">AtomicLong</span>      longAtomico = <span class="kw">new</span> <span class="cls">AtomicLong</span>();
+<span class="cls">AtomicBoolean</span>   flagAtomico = <span class="kw">new</span> <span class="cls">AtomicBoolean</span>(<span class="kw">false</span>);
+<span class="cls">AtomicReference</span>&lt;<span class="cls">String</span>&gt; ref = <span class="kw">new</span> <span class="cls">AtomicReference</span>&lt;&gt;(<span class="str">"valore"</span>);</code></pre>
+    </div>
+ 
+    <h3 style="font-size:1.2rem;font-weight:700;margin:2rem 0 1.5rem;color:var(--text)">Comparazione Metodi di Sincronizzazione</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Meccanismo</th>
+            <th>Flessibilità</th>
+            <th>Prestazioni</th>
+            <th>Caso d'uso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">synchronized</code></td>
+            <td><span class="badge badge-orange">Bassa</span></td>
+            <td><span class="badge badge-blue">Media</span></td>
+            <td>Casi semplici, metodi interi</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">ReentrantLock</code></td>
+            <td><span class="badge badge-green">Alta</span></td>
+            <td><span class="badge badge-blue">Media</span></td>
+            <td>Logica complessa, tryLock, interruptible</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">AtomicXxx</code></td>
+            <td><span class="badge badge-orange">Media</span></td>
+            <td><span class="badge badge-green">Alta</span></td>
+            <td>Contatori, flags, CAS operations</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">volatile</code></td>
+            <td><span class="badge badge-orange">Bassa</span></td>
+            <td><span class="badge badge-green">Alta</span></td>
+            <td>Variabili visibili tra thread (no atomicità)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+ 
+  <!-- EXECUTOR -->
+  <section class="section" id="executor">
+    <div class="section-label">Thread Pool</div>
+    <h2 class="section-title">ExecutorService e Thread Pool</h2>
+    <p class="section-desc">
+      Creare un thread per ogni task è costoso. I <strong>Thread Pool</strong> riutilizzano un numero fisso di thread per eseguire molti task in modo efficiente.
+    </p>
+ 
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span class="code-title">Tipi di Thread Pool</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+      </div>
+      <pre><code><span class="kw">import</span> java.util.concurrent.*;
+ 
+<span class="cmt">// Pool con numero fisso di thread</span>
+<span class="cls">ExecutorService</span> fixed = <span class="cls">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num">4</span>);
+ 
+<span class="cmt">// Pool che scala dinamicamente (attenzione: può creare molti thread)</span>
+<span class="cls">ExecutorService</span> cached = <span class="cls">Executors</span>.<span class="fn">newCachedThreadPool</span>();
+ 
+<span class="cmt">// Un solo thread, esecuzione sequenziale garantita</span>
+<span class="cls">ExecutorService</span> single = <span class="cls">Executors</span>.<span class="fn">newSingleThreadExecutor</span>();
+ 
+<span class="cmt">// Pool per task pianificati / periodici</span>
+<span class="cls">ScheduledExecutorService</span> sched = <span class="cls">Executors</span>.<span class="fn">newScheduledThreadPool</span>(<span class="num">2</span>);
+sched.<span class="fn">scheduleAtFixedRate</span>(() -&gt;
+    <span class="cls">System</span>.out.<span class="fn">println</span>(<span class="str">"Ogni 5 secondi"</span>),
+    <span class="num">0</span>, <span class="num">5</span>, <span class="cls">TimeUnit</span>.SECONDS);
+ 
+<span class="cmt">// Java 21+: Virtual Thread Pool (Project Loom)</span>
+<span class="cls">ExecutorService</span> virtual = <span class="cls">Executors</span>.<span class="fn">newVirtualThreadPerTaskExecutor</span>();</code></pre>
+    </div>
+ 
+    <div class="code-container">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span class="code-title">Esempio Completo — Elaborazione Parallela</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+      </div>
+      <pre><code><span class="kw">import</span> java.util.concurrent.*;
+<span class="kw">import</span> java.util.*;
+ 
+<span class="kw">public class</span> <span class="cls">ElaborazioneParallela</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(<span class="cls">String</span>[] args) <span class="kw">throws</span> <span class="cls">Exception</span> {
+ 
+        <span class="cls">ExecutorService</span> pool = <span class="cls">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num">4</span>);
+        <span class="cls">List</span>&lt;<span class="cls">Future</span>&lt;<span class="cls">String</span>&gt;&gt; futures = <span class="kw">new</span> <span class="cls">ArrayList</span>&lt;&gt;();
+ 
+        <span class="cmt">// Sottometti 10 task al pool</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">10</span>; i++) {
+            <span class="kw">final int</span> taskId = i;
+            futures.<span class="fn">add</span>(pool.<span class="fn">submit</span>(() -&gt; {
+                <span class="cls">Thread</span>.<span class="fn">sleep</span>(<span class="num">500</span>); <span class="cmt">// simula lavoro</span>
+                <span class="kw">return</span> <span class="str">"Task "</span> + taskId + <span class="str">" completato"</span>;
+            }));
+        }
+ 
+        <span class="cmt">// Raccogli i risultati</span>
+        <span class="kw">for</span> (<span class="cls">Future</span>&lt;<span class="cls">String</span>&gt; f : futures) {
+            <span class="cls">System</span>.out.<span class="fn">println</span>(f.<span class="fn">get</span>());
+        }
+ 
+        <span class="cmt">// Shutdown ordinato: aspetta il completamento</span>
+        pool.<span class="fn">shutdown</span>();
+        pool.<span class="fn">awaitTermination</span>(<span class="num">30</span>, <span class="cls">TimeUnit</span>.SECONDS);
+    }
+}</code></pre>
+    </div>
+ 
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon" style="background: rgba(251,191,36,0.1);">⚠️</div>
+        <div class="card-title">Deadlock</div>
+        <div class="card-desc">Due thread si bloccano a vicenda aspettando un lock che l'altro detiene. Prevenibile acquisendo i lock sempre nello stesso ordine.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(255,107,53,0.1);">🔄</div>
+        <div class="card-title">Livelock</div>
+        <div class="card-desc">I thread non sono bloccati ma continuano a cambiarsi di stato reciprocamente senza progredire. Difficile da individuare.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(0,212,255,0.1);">🏃</div>
+        <div class="card-title">Starvation</div>
+        <div class="card-desc">Un thread non ottiene mai il lock perché altri thread a priorità più alta lo acquisiscono continuamente prima di lui.</div>
+      </div>
+    </div>
+ 
+    <div style="margin-top:3rem">
+      <div class="section-label">Novità Java 21+</div>
+      <h3 style="font-size:1.5rem;font-weight:800;letter-spacing:-1px;margin-bottom:1rem;color:var(--text)">Virtual Threads (Project Loom)</h3>
+      <div class="callout">
+        <strong>I Virtual Thread</strong> sono thread leggeri gestiti dalla JVM (non dall'OS). Puoi crearne <em>milioni</em> senza esaurire la memoria. Ideali per applicazioni I/O-intensive (server web, database). Basta cambiare una riga di codice!
+      </div>
+      <div class="code-container">
+        <div class="code-header">
+          <div class="code-dots">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+          </div>
+          <span class="code-title">Virtual Threads — Java 21</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copia</button>
+        </div>
+        <pre><code><span class="cmt">// Prima (Platform Thread)</span>
+<span class="cls">Thread</span> t = <span class="kw">new</span> <span class="cls">Thread</span>(() -&gt; task());
+ 
+<span class="cmt">// Dopo (Virtual Thread) — stessa API!</span>
+<span class="cls">Thread</span> vt = <span class="cls">Thread</span>.<span class="fn">ofVirtual</span>().<span class="fn">start</span>(() -&gt; task());
+ 
+<span class="cmt">// Con ExecutorService</span>
+<span class="kw">try</span> (<span class="cls">ExecutorService</span> exec = <span class="cls">Executors</span>.<span class="fn">newVirtualThreadPerTaskExecutor</span>()) {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">1_000_000</span>; i++) {  <span class="cmt">// 1 MILIONE di task!</span>
+        exec.<span class="fn">submit</span>(() -&gt; {
+            <span class="cls">Thread</span>.<span class="fn">sleep</span>(<span class="cls">Duration</span>.<span class="fn">ofMillis</span>(<span class="num">100</span>));
+            <span class="kw">return</span> <span class="str">"OK"</span>;
+        });
+    }
+} <span class="cmt">// auto-shutdown con try-with-resources</span></code></pre>
+      </div>
+    </div>
+  </section>
+ 
+</main>
+ 
+<footer>
+  <p>Guida ai <strong>Java Threads</strong> — Da <code style="color:var(--accent);font-family:'JetBrains Mono',monospace">new Thread()</code> a Project Loom</p>
+  <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--muted)">Java SE 8 · Java SE 11 · Java SE 17 · Java SE 21</p>
+</footer>
+ 
+<script>
+  // Intersection Observer per animazioni scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+ 
+  // Scroll to section
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+ 
+  // Nav links
+  document.querySelectorAll('.nav-links a[data-target]').forEach(a => {
+    a.addEventListener('click', () => scrollTo(a.dataset.target));
+  });
+ 
+  // Copy code
+  function copyCode(btn) {
+    const pre = btn.closest('.code-container').querySelector('pre');
+    const text = pre.innerText;
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      btn.textContent = '✓ Copiato';
+      setTimeout(() => btn.textContent = 'Copia', 2000);
+    } catch(e) {
+      btn.textContent = '✗ Errore';
+      setTimeout(() => btn.textContent = 'Copia', 2000);
+    }
+    document.body.removeChild(ta);
+  }
+ 
+  // Animazione numero CPU
+  const cpuEl = document.getElementById('cpu-num');
+  const cores = navigator.hardwareConcurrency || 4;
+  cpuEl.textContent = cores;
+</script>
+</body>
+</html>
